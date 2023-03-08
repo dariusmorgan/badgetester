@@ -1,7 +1,252 @@
 <!DOCTYPE html>
 <html>
 <body>
-<h1>Hello World</h1>
-<p>I'm hosted with GitHub Pages.</p>
+<h1>Badge Testing Tool</h1>
+<p>This tool is used to determine if a desired number is possible to be configured with the current badge reader settings. It performs a binary comparison of the raw hexidecimal output against the desired number. </p>
+<ul>
+<li>If MATCH FOUND it should therefore be possible to configure this reader to read the desired number by changing the badge configuration bit count settings</li>
+<li>If NO MATCH found then the desired number is not possible with the current badge reader model or badge type settings.</li>
+</ul>
+<br>
+<br>
+  <table>
+  <tr>
+	<td width="200px"><label>Input Scanned Hex Code:</label>
+	<div class="help-tip">
+		<p>This is a hexidecimal representation of the scanned number. This can be found in the config tool by enabling the "Send ID as hexadecimal number" setting on the reader then scanning the badge again. Remember to disable this after testing is complete<br /><br>
+		<img width="100%" src="send_as_hex.png" /></p>
+		
+	</div>
+	</td>
+	<td><input id="scannedHex" size="16" type="text" /></td>
+	<td class="bin"><span id="scannedBinSpan"></span></td>
+  </tr>
+  <tr>
+	<td width="200px"><label>Input Desired Number:</label>
+	<div class="help-tip">
+		<p>This is the number that the client expects to be scanned. This number may be printed on the badge itself or provided by the client directly.</p>
+		
+	</div>
+	</td>
+	<td><input id="desiredDec" size="16" type="text" /></td>
+	<td class="bin"><span id="desiredBinSpan"></span></td>
+  </tr>
+  </table>
+  <br>
+  <br>
+  <table>
+  <tr>
+  <td width="200"><label>Results:</label></td>
+  <td><span id="matchResultsSpan"></span></td>
+  </tr>
+  <tr>
+  <td><label>Bit Shift Amount:</label>
+  <div class="help-tip">
+		<p>This is an estimated amount of places that may be needed to increased or decreased for the bit count field in order to get the desired number to scan. You may have to adjust this up or down to get the desired output to actually scan<br /><br>
+		<img width="100%" src="bit_shift.png" /></p>
+		
+	</div>
+  </td>
+  <td><span id="matchPosSpan"></span></td>
+  </tr>
+  </table>
 </body>
 </html>
+<script type="text/javascript">
+// listen for changes to scanned hex input
+scannedHex.addEventListener("input", function (e) {
+	matchResults(this.value,desiredDec.value);
+});
+
+// listen for changes to desired dec input
+desiredDec.addEventListener("input", function (e) {
+	
+	matchResults(scannedHex.value,this.value);
+});
+
+
+// convert hexidecimal to binary
+// ex. 33 00 5B 60 DC
+function hex2bin(n){
+	var x = n.replace(/\s+/g, '');
+	if(x != "") return (parseInt(x, 16).toString(2)).padStart(8, '0');
+	else return "";
+}
+
+// convert desired number from decimal to binary
+// ex. 0005988572
+function dec2bin(n){
+	var x = n.replace(/\s+/g, '');
+	if(x != "") return (parseInt(x).toString(2));
+	else return "";
+}
+
+// checks whether the binary string of the decimal input can be found anywhere inside the binary string of the hexidecimal input
+function matchResults(h,d){
+	var hBin = h.length>0 ? hex2bin(h) : '';
+	var dBin = d.length>0 ? dec2bin(d) : '';
+	var index = hBin.indexOf(dBin);
+	
+	// only run comparison if there is a value in both input fields
+	if (hBin.length > 0 && dBin.length > 0) { 
+		
+		// add green highlighting if a match is found
+		if (index > 0) { 
+			var innerHTML = hBin;
+			
+			scannedBinSpan.innerHTML = "";
+			innerHTML = innerHTML.substring(index,innerHTML.length) + "<span class='highlight'>" + innerHTML.substring(index,index+dBin.length) + "</span>" + innerHTML.substring(index + dBin.length);
+			
+			scannedBinSpan.innerHTML = innerHTML;
+			desiredBinSpan.innerHTML = dBin;
+			desiredBinSpan.className = "highlight";
+			
+			console.log(hBin);
+			console.log(dBin);
+			console.log(index);
+			matchResultsSpan.innerHTML = "<span style='color:#40ba30;'>MATCH FOUND</span>";
+			matchPosSpan.innerHTML = index.toString();
+		}
+		
+		// else reset any highlighting or values
+		else {
+			let a = document.getElementsByClassName( "highlight" );
+			[...a].forEach( x => x.classList.remove("highlight") );
+			[...a].forEach( x => x.innerHTML = "" );
+			
+			if(hBin.length>0) scannedBinSpan.innerHTML = hBin;
+			else scannedBinSpan.innerHTML = "";
+			
+			if(dBin.length>0) desiredBinSpan.innerHTML = dBin;
+			else desiredBinSpan.innerHTML="";
+			
+			matchResultsSpan.innerHTML = '<span style="color:#d6244e;">NO MATCH</span>';
+			matchPosSpan.innerHTML = "";
+		}
+	
+	}
+	
+	// else reset all values
+	else {
+		console.log("reset");
+		scannedBinSpan.innerHTML = "";
+		desiredBinSpan.innerHTML = "";
+		matchResultsSpan.innerHTML = "";
+		matchPosSpan.innerHTML = "";
+	}
+}
+</script> 
+<style>
+body {
+	background-color: #383834;
+	color: #fff;
+	font-family: "Neo Sans W01", Calibri, "Lucida Grande", Arial;
+}
+
+label {
+	font-weight: bold;
+	color: #ffc500;
+}
+
+.highlight {
+	color: #40ba30;
+	font-weight: bold;
+	text-decoration: underline;
+}
+
+.bin {
+	font-style: italic;
+	color: #cdcfca;
+	padding-left: 25px;
+}
+
+
+/* The ? icon */
+.help-tip{
+	position: relative;
+	display: inline;
+	margin: auto;
+	text-align: center;
+	cursor: help;
+}
+
+.help-tip:before{
+    content:'?';
+    font-family: sans-serif;
+    font-weight: normal;
+    color:#fff;
+}
+
+.help-tip:hover p{
+    display:block;
+    transform-origin: 100% 0%;
+    -webkit-animation: fadeIn 0.3s ease;
+    animation: fadeIn 0.3s ease;
+}
+
+/* The tooltip */
+.help-tip p {    
+	display: none;
+	font-family: sans-serif;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	text-align: center;
+	background-color: #FFFFFF;
+	padding: 12px 16px;
+	width: 250px;
+	height: auto;
+	position: absolute;
+	left: 50%;
+	transform: translate(-50%, 5%);
+	border-radius: 3px;
+/* 	border: 1px solid #E0E0E0; */
+	box-shadow: 0 0px 20px 0 rgba(0,0,0,0.1);
+	color: #37393D;
+	font-size: 12px;
+	line-height: 18px;
+	z-index: 99;
+}
+
+.help-tip p a {
+	color: #067df7;
+	text-decoration: none;
+}
+
+.help-tip p a:hover {
+	text-decoration: underline;
+}
+
+/* The pointer of the tooltip */
+.help-tip p:before { 
+	position: absolute;
+	content: '';
+	width: 0;
+	height: 0;
+	border: 10px solid transparent;
+	border-bottom-color:#FFFFFF;
+	top: -9px;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+ /* Prevents the tooltip from being hidden */
+.help-tip p:after {
+	width: 10px;
+	height: 40px;
+	content:'';
+	position: absolute;
+	top: -40px;
+	left: 0;
+}
+
+/* CSS animation */
+@-webkit-keyframes fadeIn {
+    0% { opacity:0; }
+    100% { opacity:100%; }
+}
+
+@keyframes fadeIn {
+    0% { opacity:0; }
+    100% { opacity:100%; }
+}
+</style>
